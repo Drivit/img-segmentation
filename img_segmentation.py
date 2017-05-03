@@ -31,15 +31,24 @@ def calculate_neighbours(matrix_position, matrix_size, shape='cross', radius=1):
 			#Up
 			if (matrix_row) - i >= 0:
 				neighbours_matrix.append((matrix_col, matrix_row-i))
+			else:
+				neighbours_matrix.append((-1, -1))
 			#Down
 			if (matrix_row) + i < max_row:
 				neighbours_matrix.append((matrix_col, matrix_row+i))
+			else:
+				neighbours_matrix.append((-1, -1))
 			#Left
 			if (matrix_col) - i >= 0:
 				neighbours_matrix.append((matrix_col-i, matrix_row))
+			else:
+				neighbours_matrix.append((-1, -1))
 			#Right
 			if (matrix_col) + i < max_col:
 				neighbours_matrix.append((matrix_col+i, matrix_row))
+			else:
+				neighbours_matrix.append((-1, -1))
+
 	elif shape == 'square':
 		pass
 		'''
@@ -51,75 +60,64 @@ def calculate_neighbours(matrix_position, matrix_size, shape='cross', radius=1):
 				
 	return neighbours_matrix
 
-def generate_trainig_set(path_img1, path_img2, shape='cross', radius=1):
+def generate_trainig_set(images, shape='cross', radius=1):
 	'''
 	Function to create a training set from two images
 
 	Parameters
 	----------
-	path_img1: path to the image from class 1
-	path_img2: path to the image from class 0
+	img1: isntance of an image from PIL.Image, this image is for class 1
+	img2: isntance of an image from PIL.Image, this image is for class 0
 	shape: shape that will be used in the neighbourhood, 'cross' as default
 	radius: neighbourhood's block radius, 1 as default
 	'''
 
 	training_set = []
+	class_id = 0
 
-	# Load both images in gray sacale
-	img_1 = Image.open(path_img1).convert('L')
-	img_2 = Image.open(path_img2).convert('L')
-
-	# Extract pixels maps
-	pix_img_1 = img_1.load()
-	pix_img_2 = img_2.load()
+	for image in images:
+		# Extract pixels maps
+		pix_img = image.load()
 	
-	# Get images' size
-	img_1_cols, img_1_rows  =  img_1.size
-	img_2_cols, img_2_rows  =  img_2.size
+		# Get image size
+		img_cols, img_rows  =  image.size
 
-	# Create training set with the neighbours' average for each pixel
-	for matrix_row in range(img_1_rows):
-		for matrix_col in range(img_1_cols):
-			neighbours = calculate_neighbours((matrix_row, matrix_col), 
-											  (img_1_rows, img_1_cols), 
-											  shape,
-											  radius)
+		# Create training set from image
+		for matrix_row in range(img_rows):
+			for matrix_col in range(img_cols):
+				neighbours = calculate_neighbours((matrix_row, matrix_col), 
+												  (img_rows, img_cols), 
+												  shape,
+												  radius)
 
-			neighbourhood_average = 0
-			for neighbour in neighbours:
-				neighbourhood_average += pix_img_1[neighbour[0], neighbour[1]]
+				# Calculate neighbourhood average to fill empty neighbours positions
+				neighbourhood_average = 0
+				total_real_neighbours = len(neighbours)
+				for neighbour in neighbours:
+					if neighbour[0] != -1:
+						neighbourhood_average += pix_img[neighbour[0], neighbour[1]]
+					else:
+						total_real_neighbours -= 1
 
-			training_set.append((np.array(neighbourhood_average / len(neighbours)), 
-								np.array(1)))
-
-	for matrix_row in range(img_2_rows):
-		for matrix_col in range(img_2_cols):
-			neighbours = calculate_neighbours((matrix_row, matrix_col), 
-											  (img_2_rows, img_2_cols),
-											  shape,
-											  radius)
-
-			neighbourhood_average = 0
-			for neighbour in neighbours:
-				neighbourhood_average += pix_img_2[neighbour[0], neighbour[1]]
+				neighbourhood_average /= total_real_neighbours
+				total_neighbours = len(neighbours)
 				
-			training_set.append((np.array(neighbourhood_average / len(neighbours)), 
-								np.array(0)))
+				# Add gray sacles array to training set
+				array_gray_values = np.zeros(total_neighbours)
+				for i in range(total_neighbours):
+					if neighbours[i][0] != -1:
+						array_gray_values[i] = pix_img[neighbours[i][0], neighbours[i][1]]
+					else:
+						array_gray_values[i] = neighbourhood_average
+
+				training_set.append( (np.array(array_gray_values), np.array(class_id)) )
+
+		class_id += 1
 
 	return training_set
 
-def cross_validation(n_folders, size_folder):
-	'''
-	Function to calculate the accuracy of the algorithm
-	'''
-	pass
-
-def main():
-	image_1 = 'img_1.png'
-	image_2 = 'img_2.png'
-
-	training_set = generate_trainig_set(image_1, image_2)
-
-
 if __name__ == '__main__':
-	main()
+	img_1 = Image.open('image_1.png').convert('L')
+	img_2 = Image.open('image_2.jpg').convert('L')
+
+	training_set = generate_trainig_set([img_1, img_2])
