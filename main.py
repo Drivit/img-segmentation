@@ -3,7 +3,7 @@ from matplotlib.widgets import Button
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
 
-from img_segmentation import generate_trainig_set
+from img_segmentation import generate_trainig_set, get_neighbours_values
 from mlp import MultiLayerPerceptron as MLP
 
 class ImageSegmentation:
@@ -65,9 +65,14 @@ class ImageSegmentation:
 
     def _on_train(self, event):
         if self._object_img and self._background_img:
-            # training_set = generate_trainig_set(self._object_img, self._background_img)
+            images = [self._object_img, self._background_img]
+            training_set = generate_trainig_set(images)
 
-            # self._mlp.train(training_set)
+            self._mlp.train(
+                training_set,
+                learning_rate=0.1,
+                max_epochs=100,
+                min_error=0.1)
 
             self._plot_result()
         else:
@@ -75,8 +80,21 @@ class ImageSegmentation:
 
     def _plot_result(self):
         result_img = self._img.copy()
+        pixels = result_img.load()
 
-        # test each pixel
+        ncols, nrows = result_img.size
+
+        for col in range(ncols):
+            for row in range(nrows):
+
+                inputs = get_neighbours_values(self._img, (row, col))
+
+                output, = self._mlp.test(inputs)
+
+                if output == 0:
+                    pixels[col, row] = 1
+                else:
+                    pixels[col, row] = 0
 
         self._result_ax.imshow(result_img, cmap='gray')
 
