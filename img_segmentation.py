@@ -60,6 +60,38 @@ def calculate_neighbours(matrix_position, matrix_size, shape='cross', radius=1):
 				
 	return neighbours_matrix
 
+def get_neighbours_values(img, matrix_position, radius=1):
+	pix_img = img.load()
+	max_col, max_row = img.size
+
+	neighbours = calculate_neighbours(matrix_position, 
+									  (max_row, max_col),
+									  'cross',
+									  radius)
+
+	neighbourhood_average = 0
+	total_real_neighbours = len(neighbours)
+
+	for neighbour in neighbours:
+		if neighbour[0] != -1:
+			neighbourhood_average += pix_img[neighbour[0], neighbour[1]]
+		else:
+			total_real_neighbours -= 1
+
+	neighbourhood_average /= total_real_neighbours
+	total_neighbours = len(neighbours)
+	
+	# Calculate gray scales array
+	array_gray_values = np.zeros(total_neighbours)
+	for i in range(total_neighbours):
+		if neighbours[i][0] != -1:
+			array_gray_values[i] = pix_img[neighbours[i][0], neighbours[i][1]]
+		else:
+			array_gray_values[i] = neighbourhood_average
+
+	return np.array(array_gray_values)
+	
+
 def generate_trainig_set(images, shape='cross', radius=1):
 	'''
 	Function to create a training set from two images
@@ -102,7 +134,7 @@ def generate_trainig_set(images, shape='cross', radius=1):
 				neighbourhood_average /= total_real_neighbours
 				total_neighbours = len(neighbours)
 				
-				# Add gray sacles array to training set
+				# Add gray scales array to training set
 				array_gray_values = np.zeros(total_neighbours)
 				for i in range(total_neighbours):
 					if neighbours[i][0] != -1:
