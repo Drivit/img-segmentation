@@ -57,14 +57,14 @@ def calculate_neighbours(matrix_position, matrix_size, shape='cross', radius=1):
 				if (col < matrix_col):
 					neighbours_matrix.append((matrix_col+col, matrix_row))
 		'''
-				
+
 	return neighbours_matrix
 
 def get_neighbours_values(img, matrix_position, radius=1):
 	pix_img = img.load()
 	max_col, max_row = img.size
 
-	neighbours = calculate_neighbours(matrix_position, 
+	neighbours = calculate_neighbours(matrix_position,
 									  (max_row, max_col),
 									  'cross',
 									  radius)
@@ -80,17 +80,17 @@ def get_neighbours_values(img, matrix_position, radius=1):
 
 	neighbourhood_average /= total_real_neighbours
 	total_neighbours = len(neighbours)
-	
+
 	# Calculate gray scales array
 	array_gray_values = np.zeros(total_neighbours)
 	for i in range(total_neighbours):
 		if neighbours[i][0] != -1:
-			array_gray_values[i] = pix_img[neighbours[i][0], neighbours[i][1]]
+			array_gray_values[i] = pix_img[neighbours[i][0], neighbours[i][1]] / float(255)
 		else:
-			array_gray_values[i] = neighbourhood_average
+			array_gray_values[i] = neighbourhood_average / float(255)
 
-	return np.array(array_gray_values)
-	
+	return array_gray_values
+
 
 def generate_trainig_set(images, shape='cross', radius=1):
 	'''
@@ -110,15 +110,15 @@ def generate_trainig_set(images, shape='cross', radius=1):
 	for image in images:
 		# Extract pixels maps
 		pix_img = image.load()
-	
+
 		# Get image size
 		img_cols, img_rows  =  image.size
 
 		# Create training set from image
 		for matrix_row in range(img_rows):
 			for matrix_col in range(img_cols):
-				neighbours = calculate_neighbours((matrix_row, matrix_col), 
-												  (img_rows, img_cols), 
+				neighbours = calculate_neighbours((matrix_row, matrix_col),
+												  (img_rows, img_cols),
 												  shape,
 												  radius)
 
@@ -133,16 +133,16 @@ def generate_trainig_set(images, shape='cross', radius=1):
 
 				neighbourhood_average /= total_real_neighbours
 				total_neighbours = len(neighbours)
-				
+
 				# Add gray scales array to training set
 				array_gray_values = np.zeros(total_neighbours)
 				for i in range(total_neighbours):
 					if neighbours[i][0] != -1:
-						array_gray_values[i] = pix_img[neighbours[i][0], neighbours[i][1]]
+						array_gray_values[i] = pix_img[neighbours[i][0], neighbours[i][1]] / float(255)
 					else:
-						array_gray_values[i] = neighbourhood_average
+						array_gray_values[i] = neighbourhood_average / float(255)
 
-				training_set.append( (np.array(array_gray_values), np.array(class_id)) )
+				training_set.append( (np.array(array_gray_values), np.array([class_id])) )
 
 		class_id += 1
 

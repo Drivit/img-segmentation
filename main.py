@@ -18,7 +18,7 @@ class ImageSegmentation:
         self._area = []
         self._cropping = None
 
-        self._mlp = MLP((4, 10, 10, 1))
+        self._mlp = MLP((4, 15, 5, 1))
 
         # Load target image in grayscale
         self._img = Image.open(img_path).convert('L')
@@ -70,9 +70,9 @@ class ImageSegmentation:
 
             self._mlp.train(
                 training_set,
-                learning_rate=0.1,
-                max_epochs=100,
-                min_error=0.1)
+                learning_rate=0.05,
+                max_epochs=200,
+                min_error=0.003)
 
             self._plot_result()
         else:
@@ -86,16 +86,13 @@ class ImageSegmentation:
 
         for col in range(ncols):
             for row in range(nrows):
-
                 inputs = get_neighbours_values(self._img, (row, col))
-
                 output, = self._mlp.test(inputs)
 
                 if output == 0:
                     pixels[col, row] = 1
                 else:
                     pixels[col, row] = 0
-
         self._result_ax.imshow(result_img, cmap='gray')
 
     def _onclick(self, event):
